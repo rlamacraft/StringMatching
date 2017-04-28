@@ -50,7 +50,7 @@ update msg model =
                 state = searchString newText model.pattern model.borderTable 0 }
     PatternInput newPattern ->
       { model | pattern = newPattern,
-                borderTable = borderTable (fromList []) newPattern,
+                borderTable = borderTable newPattern,
                 state = searchString model.text newPattern model.borderTable 0 }
 
 -- VIEW

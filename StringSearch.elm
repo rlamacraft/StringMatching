@@ -77,21 +77,26 @@ shiftPattern text pattern borderTable patternIndex =
     else
       patternIndex
 
+{-| Entry-point wrapper for borderTableLoop -}
+borderTable : String -> Result String (Array Int)
+borderTable pattern =
+  borderTableLoop (fromList []) pattern
+
 {-| Recursively calculates the border table for a given pattern -}
-borderTable : Array Int -> String -> Result String (Array Int)
-borderTable table pattern =
+borderTableLoop : Array Int -> String -> Result String (Array Int)
+borderTableLoop table pattern =
   let
     nextChar = uncons (dropLeft (Array.length table - 1) pattern)
   in
     if Array.length table == 0 then
-      borderTable (push -1 table) pattern
+      borderTableLoop (push -1 table) pattern
     else if (String.length pattern) + 1 == (Array.length table) then
       Ok table
     else
       case nextChar of
         Just (char,tail) -> --not end of pattern
           case newBorder pattern table char of
-            Ok newBorderValue -> borderTable (push (newBorderValue + 1) table) pattern
+            Ok newBorderValue -> borderTableLoop (push (newBorderValue + 1) table) pattern
             Err error -> Err error
         Nothing ->
           Ok (fromList [])
