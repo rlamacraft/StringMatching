@@ -1,15 +1,18 @@
-module StringSearch exposing (borderTable,searchString,State(..))
+module StringSearch exposing (borderTable,searchString,kmpTable,State(..))
 
 import Array exposing (Array(..),length,get,push,fromList)
 import String exposing (uncons,dropLeft,length)
 
-{-| Implementation of [Morris-Pratt String Searching](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm).
+{-| Implementation of [Knuth-Morris-Pratt String Searching](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm).
 
 # Searching
 @docs searchString, match, shiftPattern
 
 # Border Table
 @docs borderTable, newBorder, borderOfBorderLoop
+
+# Knuth-Morris-Pratt table
+@docs kmpTable, kmpTableLoop, kmpBorderLoop
 -}
 
 type State
@@ -125,3 +128,57 @@ borderOfBorderLoop pattern table endingChar lastBorder =
             Err "indexing pattern error"
     Nothing ->
       Err "indexing table error"
+
+{-| Entry-point wrapper for kmpTableLoop -}
+kmpTable : String -> Result String (Array Int)
+kmpTable pattern =
+  kmpTableLoop (Array.fromList [-1]) pattern 1 0
+
+charAtIndex : String -> Int -> Result String Char
+charAtIndex str index =
+  case String.uncons <| dropLeft index str of
+    Just (head_str,_) -> Ok head_str
+    Nothing -> Err <| "invalid index of " ++ str ++ " (" ++ (toString index) ++ ")"
+
+{-| Recursively calculates the kmp table for a given pattern -}
+kmpTableLoop : Array Int -> String -> Int -> Int -> Result String (Array Int)
+kmpTableLoop table pattern index k =
+  if index + 1 > String.length pattern then
+    Ok <| Array.push k table
+  else
+    case charAtIndex pattern index of
+      Ok pattern_i ->
+        case charAtIndex pattern k of
+          Ok pattern_k ->
+            if pattern_i == pattern_k then
+              case get k table of
+                Just table_k ->
+                  kmpTableLoop (Array.push table_k table ) pattern (index + 1) (k + 1)
+                Nothing ->
+                  Err "table indexing error"
+            else
+              case kmpBorderLoop table pattern index k of
+                Ok new_k -> kmpTableLoop (Array.push k table ) pattern (index + 1) (new_k + 1)
+                Err error -> Err error
+          Err error -> Err <| "invalid input: k - " ++ error
+      Err error -> Err <| "invalid input: index - " ++ error
+
+{-| Generates the next k pointer -}
+kmpBorderLoop : Array Int -> String -> Int -> Int -> Result String Int
+kmpBorderLoop table pattern index k =
+  case Array.get k table of
+    Just new_k ->
+      if new_k < 0 then
+        Ok new_k
+      else
+        case String.uncons <| dropLeft new_k pattern of
+          Just (head_l,_) ->
+            case String.uncons <| dropLeft index pattern of
+              Just (head_i,_) ->
+                if head_i == head_l then
+                  Ok new_k
+                else
+                  kmpBorderLoop table pattern index new_k
+              Nothing -> Err "pattern indexing error"
+          Nothing -> Err "table indexing error"
+    Nothing -> Err "invalid input: k"
