@@ -4,3 +4,7 @@ A convoluted implementation of the [Knuth–Morris–Pratt algorithm](https://en
 ## Compile
 
 ```elm-make main.elm --output index.html```
+
+## Run tests
+
+```elm-test```
