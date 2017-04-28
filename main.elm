@@ -6,7 +6,7 @@ import Css exposing (..)
 
 import Array exposing(Array(..),fromList,toList)
 
-import StringSearch exposing (borderTable,searchString,State(..))
+import StringSearch exposing (borderTable,searchString,kmpTable,State(..))
 
 
 main : Program Never
@@ -24,6 +24,7 @@ type alias Model = {
   text : String,
   pattern : String,
   borderTable : Result String (Array Int),
+  kmpTable : Result String (Array Int),
   state : State
 }
 
@@ -32,6 +33,7 @@ model = {
   text = "",
   pattern = "",
   borderTable = Ok (fromList []),
+  kmpTable = Ok (fromList []),
   state = Failed "No data"}
 
 
@@ -50,7 +52,8 @@ update msg model =
                 state = searchString newText model.pattern model.borderTable 0 }
     PatternInput newPattern ->
       { model | pattern = newPattern,
-                borderTable = borderTable (fromList []) newPattern,
+                borderTable = borderTable newPattern,
+                kmpTable = kmpTable newPattern,
                 state = searchString model.text newPattern model.borderTable 0 }
 
 -- VIEW
@@ -84,6 +87,14 @@ view model =
             Html.text ("Border Table: " ++ toString (toList table))
           Err error ->
             Html.text ("Border Table: error - " ++ error)
+      ]
+      , div [ styles [ margin (px 10) ] ] [
+        case model.kmpTable of
+          Ok table ->
+            Html.text ("KMP Table: " ++ toString (toList table))
+          Err error ->
+            Html.text ("KMP Table: error - " ++ error)
         ]
       ]
     ]
+  -- ]
