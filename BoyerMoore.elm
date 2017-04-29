@@ -11,7 +11,7 @@ module BoyerMoore exposing (BadCharacterTable,GoodSuffixTable,initBadCharacterTa
 
 import Array exposing (Array(..),fromList)
 import String exposing (length)
-import Dict exposing (Dict(..),get,empty)
+import Dict exposing (Dict(..),get,empty,insert)
 import Maybe exposing (withDefault)
 
 {-| [Bad Character table](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm#The_Bad_Character_Rule) -}
@@ -21,7 +21,21 @@ type BadCharacterTable =
 {-| Generate a bad character table from a given pattern -}
 initBadCharacterTable : String -> BadCharacterTable
 initBadCharacterTable pattern =
-  BadCharacterTable (String.length pattern) (Dict.empty) --replace this Dict.empty with a generated dict
+  initBadCharacterTable_loop pattern
+    <| BadCharacterTable (String.length pattern) Dict.empty
+
+initBadCharacterTable_loop : String -> BadCharacterTable -> BadCharacterTable
+initBadCharacterTable_loop pattern (BadCharacterTable patternLength table) =
+  if String.length pattern == 1 then
+    BadCharacterTable patternLength table
+  else
+    case String.uncons pattern of
+      Just (patternHead,patternTail) ->
+        initBadCharacterTable_loop patternTail
+          <| BadCharacterTable patternLength
+          <| Dict.insert patternHead (String.length pattern - 1) table
+      Nothing ->
+        BadCharacterTable 0 Dict.empty
 
 {-| Get a value from a bad character table
     Uses pattern length as default value, if requested character does not occur in the pattern

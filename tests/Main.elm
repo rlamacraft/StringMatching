@@ -6,7 +6,9 @@ import Test exposing (..)
 import Expect exposing (..)
 import Array exposing (Array(..),fromList)
 
-import StringSearch exposing(borderTable, searchString, kmpTable, State(..))
+import Utils exposing (State(..))
+import StringSearch exposing (borderTable, searchString, kmpTable)
+import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift)
 
 all : Test
 all =
@@ -14,6 +16,7 @@ all =
     [ borderTableTests
     , searchStringTests
     , kmpTableTests
+    , badCharacterTests
     ]
 
 main : Program Value
@@ -82,6 +85,29 @@ kmpTableTests =
           in
             kmpTable "abacabacab"
               |> Expect.equal moreComplexStringBorderTable
+      ]
+
+badCharacterTests : Test
+badCharacterTests =
+  describe "Generate the bad character table for Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptyBadCharacterTable = initBadCharacterTable ""
+          in
+            getBadCharacterShift emptyBadCharacterTable 'a'
+              |> Expect.equal (Ok 0)
+      , test "Simple String" <|
+        \() ->
+          let
+            emptyBadCharacterTable = initBadCharacterTable "ababcabab"
+          in
+            [ getBadCharacterShift emptyBadCharacterTable 'a'
+            , getBadCharacterShift emptyBadCharacterTable 'b'
+            , getBadCharacterShift emptyBadCharacterTable 'c'
+            , getBadCharacterShift emptyBadCharacterTable 'd'
+            ]
+              |> Expect.equal [ Ok 1, Ok 2, Ok 4, Ok 9]
       ]
 
 port emit : ( String, Value ) -> Cmd msg
