@@ -1,10 +1,5 @@
 module StringSearch exposing (borderTable,searchString,kmpTable)
 
-import Array exposing (Array(..),length,get,push,fromList)
-import String exposing (uncons,dropLeft,length)
-
-import Utils exposing(State(..),charAtIndex)
-
 {-| Implementation of [Knuth-Morris-Pratt String Searching](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm).
 
 # Searching
@@ -16,6 +11,11 @@ import Utils exposing(State(..),charAtIndex)
 # Knuth-Morris-Pratt table
 @docs kmpTable, kmpTableLoop, kmpBorderLoop
 -}
+
+import Array exposing (Array(..),length,get,push,fromList)
+import String exposing (uncons,dropLeft,length)
+
+import Utils exposing(State(..),charAtIndex)
 
 {-| Recursive searching of a pattern on a text, using a precomputed border table -}
 searchString : String -> String -> Result String (Array Int) -> Int -> State
