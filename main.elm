@@ -8,7 +8,6 @@ import Array exposing(Array(..),fromList,toList)
 
 import StringSearch exposing (borderTable,searchString,kmpTable,State(..))
 
-
 main : Program Never
 main =
   App.beginnerProgram
