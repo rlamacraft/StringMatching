@@ -8,7 +8,7 @@ import Array exposing (Array(..),fromList)
 
 import Utils exposing (State(..))
 import StringSearch exposing (borderTable, searchString, kmpTable)
-import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift)
+import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable)
 
 all : Test
 all =
@@ -17,6 +17,7 @@ all =
     , searchStringTests
     , kmpTableTests
     , badCharacterTests
+    , suffixTableTests
     ]
 
 main : Program Value
@@ -100,14 +101,33 @@ badCharacterTests =
       , test "Simple String" <|
         \() ->
           let
-            emptyBadCharacterTable = initBadCharacterTable "ababcabab"
+            simpleBadCharacterTable = initBadCharacterTable "ababcabab"
           in
-            [ getBadCharacterShift emptyBadCharacterTable 'a'
-            , getBadCharacterShift emptyBadCharacterTable 'b'
-            , getBadCharacterShift emptyBadCharacterTable 'c'
-            , getBadCharacterShift emptyBadCharacterTable 'd'
+            [ getBadCharacterShift simpleBadCharacterTable 'a'
+            , getBadCharacterShift simpleBadCharacterTable 'b'
+            , getBadCharacterShift simpleBadCharacterTable 'c'
+            , getBadCharacterShift simpleBadCharacterTable 'd'
             ]
               |> Expect.equal [ Ok 1, Ok 2, Ok 4, Ok 9]
+      ]
+
+suffixTableTests : Test
+suffixTableTests =
+  describe "Generate the suffix table for the good suffix table for Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptySuffixTable = Array.fromList []
+          in
+            suffixTable ""
+              |> Expect.equal emptySuffixTable
+      , test "Simple String" <|
+        \() ->
+          let
+            simpleSuffixTable = Array.fromList [0, 2, 0, 4, 0, 0, 2, 0, 9]
+          in
+            suffixTable "ababcabab"
+              |> Expect.equal simpleSuffixTable
       ]
 
 port emit : ( String, Value ) -> Cmd msg
