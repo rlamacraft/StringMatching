@@ -8,7 +8,7 @@ import Array exposing (Array(..),fromList)
 
 import Utils exposing (State(..))
 import StringSearch exposing (borderTable, searchString, kmpTable)
-import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable)
+import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable, initGoodSuffixTable, getGoodSuffixShift)
 
 all : Test
 all =
@@ -18,6 +18,7 @@ all =
     , kmpTableTests
     , badCharacterTests
     , suffixTableTests
+    , goodSuffixTests
     ]
 
 main : Program Value
@@ -128,6 +129,31 @@ suffixTableTests =
           in
             suffixTable "ababcabab"
               |> Expect.equal simpleSuffixTable
+      ]
+
+goodSuffixTests : Test
+goodSuffixTests =
+  describe "Generate the good suffix table for Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptyGoodSuffixTable = initGoodSuffixTable ""
+          in
+            getGoodSuffixShift emptyGoodSuffixTable 0
+              |> Expect.equal (Err "invalid index arg")
+      , test "Simple String" <|
+        \() ->
+          let
+            simpleGoodSuffixTable = initGoodSuffixTable "ababcabab"
+          in
+            [ getGoodSuffixShift simpleGoodSuffixTable 0
+            , getGoodSuffixShift simpleGoodSuffixTable 4
+            , getGoodSuffixShift simpleGoodSuffixTable 5
+            , getGoodSuffixShift simpleGoodSuffixTable 6
+            , getGoodSuffixShift simpleGoodSuffixTable 7
+            , getGoodSuffixShift simpleGoodSuffixTable 8
+            ]
+              |> Expect.equal [ Ok 5, Ok 5, Ok 7, Ok 2, Ok 9, Ok 1]
       ]
 
 port emit : ( String, Value ) -> Cmd msg

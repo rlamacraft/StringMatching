@@ -56,7 +56,57 @@ type GoodSuffixTable =
 {-| Generate a good suffix table from a given pattern -}
 initGoodSuffixTable : String -> GoodSuffixTable
 initGoodSuffixTable pattern =
-  GoodSuffixTable <| fromList [] --replace this empty array with a generated array
+  let
+    reverseTable (GoodSuffixTable table) =
+      table
+        |> Array.toList
+        |> List.reverse
+        |> Array.fromList
+        |> GoodSuffixTable
+  in
+     GoodSuffixTable (fromList [])
+        |> initGoodSuffixTable_firstLoop pattern (suffixTable pattern) (length pattern - 2)
+        |> reverseTable
+        |> initGoodSuffixTable_secondLoop (suffixTable pattern) (length pattern) 0
+
+
+initGoodSuffixTable_firstLoop : String -> (Array Int) -> Int -> GoodSuffixTable -> GoodSuffixTable
+initGoodSuffixTable_firstLoop pattern suffixTable index (GoodSuffixTable table) =
+  let
+    m = String.length pattern
+    appendedGoodSuffixTable table additions =
+      Array.append additions table
+        |> GoodSuffixTable
+  in
+    if index == -1 then
+      Array.repeat (m - Array.length table) m
+        |> appendedGoodSuffixTable table
+    else
+      case Array.get index suffixTable of
+        Just suff_i ->
+          if suff_i == index + 1 then
+            Array.repeat (m - suff_i - Array.length table) (m - suff_i)
+              |> appendedGoodSuffixTable table
+              |> initGoodSuffixTable_firstLoop pattern suffixTable (index - 1)
+          else
+            GoodSuffixTable table
+              |> initGoodSuffixTable_firstLoop pattern suffixTable (index - 1)
+        Nothing ->
+          GoodSuffixTable <| Array.fromList []
+
+
+initGoodSuffixTable_secondLoop : (Array Int) -> Int -> Int -> GoodSuffixTable -> GoodSuffixTable
+initGoodSuffixTable_secondLoop suffixTable patternLength index (GoodSuffixTable table) =
+  if index == patternLength - 1 then
+    GoodSuffixTable table
+  else
+    case Array.get index suffixTable of
+      Just suff_i ->
+        Array.set (patternLength - 1 - suff_i) (patternLength - 1 - index) table
+          |> GoodSuffixTable
+          |> initGoodSuffixTable_secondLoop suffixTable patternLength (index + 1)
+      Nothing ->
+        GoodSuffixTable table
 
 {-| Generate a suffix table of a given pattern -}
 suffixTable : String -> Array Int
