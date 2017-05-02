@@ -6,7 +6,8 @@ import Css exposing (..)
 
 import Array exposing(Array(..),fromList,toList)
 
-import StringSearch exposing (borderTable,searchString,kmpTable,State(..))
+import Utils exposing (State(..))
+import StringSearch exposing (borderTable,searchString,kmpTable)
 
 main : Program Never
 main =
