@@ -1,4 +1,4 @@
-module BoyerMoore exposing (BadCharacterTable,GoodSuffixTable,initBadCharacterTable,getBadCharacterShift,initGoodSuffixTable,getGoodSuffixShift,suffixTable)
+module BoyerMoore exposing (BadCharacterTable,GoodSuffixTable,initBadCharacterTable,getBadCharacterShift,initGoodSuffixTable,getGoodSuffixShift,suffixTable,search)
 
 {-| Implementation of [Boyer-Moore String Searching](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm).
 
@@ -7,6 +7,9 @@ module BoyerMoore exposing (BadCharacterTable,GoodSuffixTable,initBadCharacterTa
 
 # Good Suffix Shift
 @docs GoodSuffixTable, initGoodSuffixTable, getGoodSuffixShift
+
+# Search
+@docs search
 -}
 
 import Array exposing (Array(..),fromList,get,toList)
@@ -15,7 +18,7 @@ import String exposing (length,reverse,uncons,isEmpty)
 import Dict exposing (Dict(..),get,empty,insert)
 import Maybe exposing (withDefault)
 
-import Utils exposing (charAtIndex)
+import Utils exposing (State(..),charAtIndex)
 
 {-| [Bad Character table](https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm#The_Bad_Character_Rule) -}
 type BadCharacterTable =
@@ -165,3 +168,35 @@ getGoodSuffixShift (GoodSuffixTable table) index =
   case Array.get index table of
     Just value -> Ok value
     Nothing -> Err "invalid index arg"
+
+{- | Search function using the GoodSuffix and BadCharacter tables -}
+search : String -> String -> GoodSuffixTable -> BadCharacterTable -> State
+search text pattern goodSuffix badCharacter =
+  searchLoop text pattern goodSuffix badCharacter (String.length pattern - 1) 0
+
+searchLoop : String -> String -> GoodSuffixTable -> BadCharacterTable -> Int -> Int -> State
+searchLoop text pattern goodSuffix badCharacter index pos =
+  if pos > String.length text - String.length pattern then
+    NoMatch
+  else if index == -1 then
+    Match
+  else
+    case charAtIndex text (pos + index) of
+      Ok text_char ->
+        case charAtIndex pattern index of
+          Ok pattern_char ->
+            if text_char == pattern_char then
+              searchLoop text pattern goodSuffix badCharacter (index - 1) pos
+            else
+              case getGoodSuffixShift goodSuffix index of
+                Ok goodSuffixShift ->
+                  case getBadCharacterShift badCharacter text_char of
+                    Ok badCharacterShift ->
+                      searchLoop text pattern goodSuffix badCharacter (String.length pattern - 1)
+                        <| (+) pos
+                        <| max goodSuffixShift
+                        <| badCharacterShift - String.length pattern + 1 + index
+                    Err error -> Failed error
+                Err error -> Failed error
+          Err error -> Failed error
+      Err error -> Failed error

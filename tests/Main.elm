@@ -8,7 +8,7 @@ import Array exposing (Array(..),fromList)
 
 import Utils exposing (State(..))
 import StringSearch exposing (borderTable, searchString, kmpTable)
-import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable, initGoodSuffixTable, getGoodSuffixShift)
+import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable, initGoodSuffixTable, getGoodSuffixShift, search)
 
 all : Test
 all =
@@ -19,6 +19,7 @@ all =
     , badCharacterTests
     , suffixTableTests
     , goodSuffixTests
+    , boyerMooreSearch
     ]
 
 main : Program Value
@@ -154,6 +155,37 @@ goodSuffixTests =
             , getGoodSuffixShift simpleGoodSuffixTable 8
             ]
               |> Expect.equal [ Ok 5, Ok 5, Ok 7, Ok 2, Ok 9, Ok 1]
+      ]
+
+boyerMooreSearch : Test
+boyerMooreSearch =
+  describe "Search using Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptyGoodSuffixTable = initGoodSuffixTable ""
+            emptyBadCharacterTable = initBadCharacterTable ""
+          in
+            search "" "" emptyGoodSuffixTable emptyBadCharacterTable
+              |> Expect.equal Match
+      , test "Simple String - Match" <|
+        \() ->
+          let
+            simplePattern = "ababcabab"
+            simpleGoodSuffixTable = initGoodSuffixTable simplePattern
+            simpleBadCharacterTable = initBadCharacterTable simplePattern
+          in
+            search "abababcababcabab" simplePattern simpleGoodSuffixTable simpleBadCharacterTable
+              |> Expect.equal Match
+      , test "Simple String - No Match" <|
+        \() ->
+          let
+            simplePattern = "ababcabab"
+            simpleGoodSuffixTable = initGoodSuffixTable simplePattern
+            simpleBadCharacterTable = initBadCharacterTable simplePattern
+          in
+            search "abacababcabac" simplePattern simpleGoodSuffixTable simpleBadCharacterTable
+              |> Expect.equal NoMatch
       ]
 
 port emit : ( String, Value ) -> Cmd msg
