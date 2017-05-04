@@ -6,7 +6,7 @@ import Test exposing (..)
 import Expect exposing (..)
 import Array exposing (Array(..),fromList)
 
-import Utils exposing (State(..))
+import Utils exposing (charAtIndex, State(..))
 import StringSearch exposing (borderTable, searchString, kmpTable)
 import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable, initGoodSuffixTable, getGoodSuffixShift, search)
 
@@ -20,6 +20,7 @@ all =
     , suffixTableTests
     , goodSuffixTests
     , boyerMooreSearch
+    , charAtIndexTests
     ]
 
 main : Program Value
@@ -187,5 +188,18 @@ boyerMooreSearch =
             search "abacababcabac" simplePattern simpleGoodSuffixTable simpleBadCharacterTable
               |> Expect.equal NoMatch
       ]
+
+charAtIndexTests : Test
+charAtIndexTests =
+  describe "Gets a specific character at a given index of a string"
+    [ test "Empty String" <|
+      \() ->
+        charAtIndex "" 0
+          |> Expect.equal (Err "invalid index of \"\" (0)")
+    , test "Simple String" <|
+      \() ->
+        charAtIndex "abbcab" 2
+          |> Expect.equal (Ok 'b')
+    ]
 
 port emit : ( String, Value ) -> Cmd msg
