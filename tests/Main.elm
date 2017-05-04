@@ -6,7 +6,7 @@ import Test exposing (..)
 import Expect exposing (..)
 import Array exposing (Array(..),fromList)
 
-import Utils exposing (charAtIndex, State(..))
+import Utils exposing (charAtIndex, stringUnique, State(..))
 import StringSearch exposing (borderTable, searchString, kmpTable)
 import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable, initGoodSuffixTable, getGoodSuffixShift, search)
 
@@ -21,6 +21,7 @@ all =
     , goodSuffixTests
     , boyerMooreSearch
     , charAtIndexTests
+    , stringUniqueTests
     ]
 
 main : Program Value
@@ -200,6 +201,19 @@ charAtIndexTests =
       \() ->
         charAtIndex "abbcab" 2
           |> Expect.equal (Ok 'b')
+    ]
+
+stringUniqueTests : Test
+stringUniqueTests =
+  describe "Drops all occurances of each char except for the first"
+    [ test "Empty String" <|
+      \() ->
+        stringUnique ""
+          |> Expect.equal []
+    , test "Simple String" <|
+      \() ->
+        stringUnique "abbcab"
+          |> Expect.equal ['a','b','c']
     ]
 
 port emit : ( String, Value ) -> Cmd msg
