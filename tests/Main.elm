@@ -6,7 +6,9 @@ import Test exposing (..)
 import Expect exposing (..)
 import Array exposing (Array(..),fromList)
 
-import StringSearch exposing(borderTable, searchString, kmpTable, State(..))
+import Utils exposing (charAtIndex, stringUnique, State(..))
+import StringSearch exposing (borderTable, searchString, kmpTable)
+import BoyerMoore exposing (BadCharacterTable, initBadCharacterTable, getBadCharacterShift, suffixTable, initGoodSuffixTable, getGoodSuffixShift, search)
 
 all : Test
 all =
@@ -14,6 +16,12 @@ all =
     [ borderTableTests
     , searchStringTests
     , kmpTableTests
+    , badCharacterTests
+    , suffixTableTests
+    , goodSuffixTests
+    , boyerMooreSearch
+    , charAtIndexTests
+    , stringUniqueTests
     ]
 
 main : Program Value
@@ -30,13 +38,20 @@ borderTableTests =
             in
               borderTable ""
                 |> Expect.equal emptyStringBorderTable
-        , test "SimpleStrin" <|
+        , test "Simple String" <|
           \() ->
             let
               simpleStringBorderTable = Ok <| Array.fromList [ -1, 0, 0, 1, 2]
             in
               borderTable "abab"
                 |> Expect.equal simpleStringBorderTable
+        , test "Lecture Example 1" <|
+          \() ->
+            let
+              lectureExampleOneBorderTable = Ok <| Array.fromList [ -1, 0, 0, 1, 0, 1, 2, 3, 4, 5, 6]
+            in
+              borderTable "abacabacab"
+                |> Expect.equal lectureExampleOneBorderTable
         ]
 
 searchStringTests : Test
@@ -64,24 +79,148 @@ kmpTableTests =
       [ test "Empty String" <|
         \() ->
           let
-            emptyStringBorderTable = Ok <| Array.fromList [ -1, 0 ]
+            emptyStringKmpTable = Ok <| Array.fromList [ -1, 0 ]
           in
             kmpTable ""
-              |> Expect.equal emptyStringBorderTable
+              |> Expect.equal emptyStringKmpTable
       , test "Simple String" <|
         \() ->
           let
-            simpleStringBorderTable = Ok <| Array.fromList [ -1, 0, -1, 0, 2 ]
+            simpleStringKmpTable = Ok <| Array.fromList [ -1, 0, -1, 0, 2 ]
           in
             kmpTable "abab"
-              |> Expect.equal simpleStringBorderTable
-      , test "More Complex String" <|
+              |> Expect.equal simpleStringKmpTable
+      , test "Lecture Example 1" <|
         \() ->
           let
-            moreComplexStringBorderTable = Ok <| Array.fromList [ -1, 0, -1, 1, -1, 0, -1, 1, -1, 0, 6 ]
+            lectureExampleOneKmpTable = Ok <| Array.fromList [ -1, 0, -1, 1, -1, 0, -1, 1, -1, 0, 6 ]
           in
             kmpTable "abacabacab"
-              |> Expect.equal moreComplexStringBorderTable
+              |> Expect.equal lectureExampleOneKmpTable
       ]
+
+badCharacterTests : Test
+badCharacterTests =
+  describe "Generate the bad character table for Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptyBadCharacterTable = initBadCharacterTable ""
+          in
+            getBadCharacterShift emptyBadCharacterTable 'a'
+              |> Expect.equal (Ok 0)
+      , test "Simple String" <|
+        \() ->
+          let
+            simpleBadCharacterTable = initBadCharacterTable "ababcabab"
+          in
+            [ getBadCharacterShift simpleBadCharacterTable 'a'
+            , getBadCharacterShift simpleBadCharacterTable 'b'
+            , getBadCharacterShift simpleBadCharacterTable 'c'
+            , getBadCharacterShift simpleBadCharacterTable 'd'
+            ]
+              |> Expect.equal [ Ok 1, Ok 2, Ok 4, Ok 9]
+      ]
+
+suffixTableTests : Test
+suffixTableTests =
+  describe "Generate the suffix table for the good suffix table for Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptySuffixTable = Array.fromList []
+          in
+            suffixTable ""
+              |> Expect.equal emptySuffixTable
+      , test "Simple String" <|
+        \() ->
+          let
+            simpleSuffixTable = Array.fromList [0, 2, 0, 4, 0, 0, 2, 0, 9]
+          in
+            suffixTable "ababcabab"
+              |> Expect.equal simpleSuffixTable
+      ]
+
+goodSuffixTests : Test
+goodSuffixTests =
+  describe "Generate the good suffix table for Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptyGoodSuffixTable = initGoodSuffixTable ""
+          in
+            getGoodSuffixShift emptyGoodSuffixTable 0
+              |> Expect.equal (Err "invalid index arg")
+      , test "Simple String" <|
+        \() ->
+          let
+            simpleGoodSuffixTable = initGoodSuffixTable "ababcabab"
+          in
+            [ getGoodSuffixShift simpleGoodSuffixTable 0
+            , getGoodSuffixShift simpleGoodSuffixTable 4
+            , getGoodSuffixShift simpleGoodSuffixTable 5
+            , getGoodSuffixShift simpleGoodSuffixTable 6
+            , getGoodSuffixShift simpleGoodSuffixTable 7
+            , getGoodSuffixShift simpleGoodSuffixTable 8
+            ]
+              |> Expect.equal [ Ok 5, Ok 5, Ok 7, Ok 2, Ok 9, Ok 1]
+      ]
+
+boyerMooreSearch : Test
+boyerMooreSearch =
+  describe "Search using Boyer-Moore"
+      [ test "Empty String" <|
+        \() ->
+          let
+            emptyGoodSuffixTable = initGoodSuffixTable ""
+            emptyBadCharacterTable = initBadCharacterTable ""
+          in
+            search "" "" emptyGoodSuffixTable emptyBadCharacterTable
+              |> Expect.equal Match
+      , test "Simple String - Match" <|
+        \() ->
+          let
+            simplePattern = "ababcabab"
+            simpleGoodSuffixTable = initGoodSuffixTable simplePattern
+            simpleBadCharacterTable = initBadCharacterTable simplePattern
+          in
+            search "abababcababcabab" simplePattern simpleGoodSuffixTable simpleBadCharacterTable
+              |> Expect.equal Match
+      , test "Simple String - No Match" <|
+        \() ->
+          let
+            simplePattern = "ababcabab"
+            simpleGoodSuffixTable = initGoodSuffixTable simplePattern
+            simpleBadCharacterTable = initBadCharacterTable simplePattern
+          in
+            search "abacababcabac" simplePattern simpleGoodSuffixTable simpleBadCharacterTable
+              |> Expect.equal NoMatch
+      ]
+
+charAtIndexTests : Test
+charAtIndexTests =
+  describe "Gets a specific character at a given index of a string"
+    [ test "Empty String" <|
+      \() ->
+        charAtIndex "" 0
+          |> Expect.equal (Err "invalid index of \"\" (0)")
+    , test "Simple String" <|
+      \() ->
+        charAtIndex "abbcab" 2
+          |> Expect.equal (Ok 'b')
+    ]
+
+stringUniqueTests : Test
+stringUniqueTests =
+  describe "Drops all occurances of each char except for the first"
+    [ test "Empty String" <|
+      \() ->
+        stringUnique ""
+          |> Expect.equal []
+    , test "Simple String" <|
+      \() ->
+        stringUnique "abbcab"
+          |> Expect.equal ['a','b','c']
+    ]
 
 port emit : ( String, Value ) -> Cmd msg

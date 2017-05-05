@@ -1,7 +1,4 @@
-module StringSearch exposing (borderTable,searchString,kmpTable,State(..))
-
-import Array exposing (Array(..),length,get,push,fromList)
-import String exposing (uncons,dropLeft,length)
+module StringSearch exposing (borderTable,searchString,kmpTable)
 
 {-| Implementation of [Knuth-Morris-Pratt String Searching](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm).
 
@@ -15,10 +12,10 @@ import String exposing (uncons,dropLeft,length)
 @docs kmpTable, kmpTableLoop, kmpBorderLoop
 -}
 
-type State
-  = Failed String
-  | Match
-  | NoMatch
+import Array exposing (Array(..),length,get,push,fromList)
+import String exposing (uncons,dropLeft,length)
+
+import Utils exposing(State(..),charAtIndex)
 
 {-| Recursive searching of a pattern on a text, using a precomputed border table -}
 searchString : String -> String -> Result String (Array Int) -> Int -> State
@@ -133,12 +130,6 @@ borderOfBorderLoop pattern table endingChar lastBorder =
 kmpTable : String -> Result String (Array Int)
 kmpTable pattern =
   kmpTableLoop (Array.fromList [-1]) pattern 1 0
-
-charAtIndex : String -> Int -> Result String Char
-charAtIndex str index =
-  case String.uncons <| dropLeft index str of
-    Just (head_str,_) -> Ok head_str
-    Nothing -> Err <| "invalid index of " ++ str ++ " (" ++ (toString index) ++ ")"
 
 {-| Recursively calculates the kmp table for a given pattern -}
 kmpTableLoop : Array Int -> String -> Int -> Int -> Result String (Array Int)
