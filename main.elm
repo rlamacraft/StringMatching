@@ -7,6 +7,7 @@ import Css exposing (..)
 import Array exposing(Array(..),fromList,toList)
 import String exposing (length,concat,uncons)
 import Result exposing(withDefault)
+import List exposing(head, tail, length)
 
 import Utils exposing (stringUnique, State(..))
 import StringSearch exposing (borderTable,searchString,kmpTable)
@@ -84,12 +85,12 @@ printGoodSuffixTable : String -> GoodSuffixTable -> String
 printGoodSuffixTable pattern table =
   let
     format index val =
-      if index + 1 == length pattern then
+      if index + 1 == String.length pattern then
         toString val
       else
         (toString val ++ ",")
     loop pattern table index htmlText =
-      if index == length pattern then
+      if index == String.length pattern then
         htmlText
       else
         loop pattern table (index + 1)
@@ -101,26 +102,29 @@ printGoodSuffixTable pattern table =
     "[" ++ (loop pattern table 0 "") ++ "]"
 
 printBadCharacterTable : String -> BadCharacterTable -> String
-printBadCharacterTable pattern table =
+printBadCharacterTable text table =
   let
-    alphabet = stringUnique pattern
-    format val =
-      if length pattern == 1 then
-        toString val
+    alphabet = stringUnique text
+    format rest_length key val =
+      if rest_length == 0 then
+        toString key ++ ":" ++ toString val
       else
-        (toString val ++ ",")
-    loop pattern table htmlText =
-      case uncons pattern of
-        Just (pattern_head, pattern_tail) ->
-          loop pattern_tail table
-            <| (++) htmlText
-            <| format
-            <| withDefault 0
-            <| getBadCharacterShift table pattern_head
-        Nothing ->
-          htmlText
+        toString key ++ ":" ++ toString val ++ ","
+    loop alphabet table htmlText =
+      case head alphabet of
+        Just character ->
+          case tail alphabet of
+            Just rest ->
+              loop rest table
+                <| (++) htmlText
+                <| format (List.length rest) character
+                <| withDefault 0
+                <| getBadCharacterShift table character
+            Nothing ->
+              htmlText
+        Nothing -> ""
   in
-    "[" ++ (loop pattern table) "" ++ "]"
+    "{" ++ (loop alphabet table) "" ++ "}"
 
 view : Model -> Html Msg
 view model =
@@ -150,7 +154,7 @@ view model =
         Html.text ("Good Suffix Table: " ++ (printGoodSuffixTable model.pattern model.goodSuffixTable))
         ]
       , div [styles [ margin (px 10) ] ] [
-        Html.text ("Bad Character Table: " ++ (printBadCharacterTable model.pattern model.badCharacterTable))
+        Html.text ("Bad Character Table: " ++ (printBadCharacterTable model.text model.badCharacterTable))
         ]
       ]
     ]
