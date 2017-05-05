@@ -5,9 +5,13 @@ import Html.App as App
 import Css exposing (..)
 
 import Array exposing(Array(..),fromList,toList)
+import String exposing (length,concat,uncons)
+import Result exposing(withDefault)
+import List exposing(head, tail, length)
 
-import StringSearch exposing (borderTable,searchString,kmpTable,State(..))
-
+import Utils exposing (stringUnique, State(..))
+import StringSearch exposing (borderTable,searchString,kmpTable)
+import BoyerMoore exposing (BadCharacterTable,GoodSuffixTable,initBadCharacterTable,getBadCharacterShift,initGoodSuffixTable,getGoodSuffixShift)
 
 main : Program Never
 main =
@@ -25,6 +29,8 @@ type alias Model = {
   pattern : String,
   borderTable : Result String (Array Int),
   kmpTable : Result String (Array Int),
+  goodSuffixTable : GoodSuffixTable,
+  badCharacterTable : BadCharacterTable,
   state : State
 }
 
@@ -34,6 +40,8 @@ model = {
   pattern = "",
   borderTable = Ok (fromList []),
   kmpTable = Ok (fromList []),
+  goodSuffixTable = initGoodSuffixTable "",
+  badCharacterTable = initBadCharacterTable "",
   state = Failed "No data"}
 
 
@@ -54,6 +62,8 @@ update msg model =
       { model | pattern = newPattern,
                 borderTable = borderTable newPattern,
                 kmpTable = kmpTable newPattern,
+                goodSuffixTable = initGoodSuffixTable newPattern,
+                badCharacterTable = initBadCharacterTable newPattern,
                 state = searchString model.text newPattern model.borderTable 0 }
 
 -- VIEW
@@ -71,10 +81,55 @@ pageBackground state =
     NoMatch ->
       (rgb 255 87 34)
 
+printGoodSuffixTable : String -> GoodSuffixTable -> String
+printGoodSuffixTable pattern table =
+  let
+    format index val =
+      if index + 1 == String.length pattern then
+        toString val
+      else
+        (toString val ++ ",")
+    loop pattern table index htmlText =
+      if index == String.length pattern then
+        htmlText
+      else
+        loop pattern table (index + 1)
+          <| (++) htmlText
+          <| format index
+          <| withDefault 0
+          <| getGoodSuffixShift table index
+  in
+    "[" ++ (loop pattern table 0 "") ++ "]"
+
+printBadCharacterTable : String -> BadCharacterTable -> String
+printBadCharacterTable text table =
+  let
+    alphabet = stringUnique text
+    format rest_length key val =
+      if rest_length == 0 then
+        toString key ++ ":" ++ toString val
+      else
+        toString key ++ ":" ++ toString val ++ ","
+    loop alphabet table htmlText =
+      case head alphabet of
+        Just character ->
+          case tail alphabet of
+            Just rest ->
+              loop rest table
+                <| (++) htmlText
+                <| format (List.length rest) character
+                <| withDefault 0
+                <| getBadCharacterShift table character
+            Nothing ->
+              htmlText
+        Nothing -> ""
+  in
+    "{" ++ (loop alphabet table) "" ++ "}"
+
 view : Model -> Html Msg
 view model =
   div [ styles [ position absolute, left (px 0), right (px 0), top (px 0), bottom (px 0), backgroundColor (pageBackground model.state) ] ]
-    [ div [ styles [ position absolute, left (pct 50), top (pct 50), marginLeft (px -135), width (px 230), marginTop (px -75), height (px 110), backgroundColor (hex "FDFDFD"), padding (px 20), borderRadius (px 3), boxShadow5 (px 0) (px 4) (px 5) (px 0) (rgba 0 0 0 0.14)] ]
+    [ div [ styles [ position absolute, left (pct 50), top (pct 50), marginLeft (px -135), width (px 230), marginTop (px -125), height (px 250), backgroundColor (hex "FDFDFD"), padding (px 20), borderRadius (px 3), boxShadow5 (px 0) (px 4) (px 5) (px 0) (rgba 0 0 0 0.14)] ]
       [ div [ styles [ margin (px 10) ] ] [
         label [for "text"] [Html.text "Text: "],
         input [onInput TextInput, id "text"] [] ]
@@ -95,6 +150,11 @@ view model =
           Err error ->
             Html.text ("KMP Table: error - " ++ error)
         ]
+      , div [styles [ margin (px 10) ] ] [
+        Html.text ("Good Suffix Table: " ++ (printGoodSuffixTable model.pattern model.goodSuffixTable))
+        ]
+      , div [styles [ margin (px 10) ] ] [
+        Html.text ("Bad Character Table: " ++ (printBadCharacterTable model.text model.badCharacterTable))
+        ]
       ]
     ]
-  -- ]
