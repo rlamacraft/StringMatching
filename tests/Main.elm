@@ -38,13 +38,20 @@ borderTableTests =
             in
               borderTable ""
                 |> Expect.equal emptyStringBorderTable
-        , test "SimpleStrin" <|
+        , test "Simple String" <|
           \() ->
             let
               simpleStringBorderTable = Ok <| Array.fromList [ -1, 0, 0, 1, 2]
             in
               borderTable "abab"
                 |> Expect.equal simpleStringBorderTable
+        , test "Lecture Example 1" <|
+          \() ->
+            let
+              lectureExampleOneBorderTable = Ok <| Array.fromList [ -1, 0, 0, 1, 0, 1, 2, 3, 4, 5, 6]
+            in
+              borderTable "abacabacab"
+                |> Expect.equal lectureExampleOneBorderTable
         ]
 
 searchStringTests : Test
@@ -72,24 +79,24 @@ kmpTableTests =
       [ test "Empty String" <|
         \() ->
           let
-            emptyStringBorderTable = Ok <| Array.fromList [ -1, 0 ]
+            emptyStringKmpTable = Ok <| Array.fromList [ -1, 0 ]
           in
             kmpTable ""
-              |> Expect.equal emptyStringBorderTable
+              |> Expect.equal emptyStringKmpTable
       , test "Simple String" <|
         \() ->
           let
-            simpleStringBorderTable = Ok <| Array.fromList [ -1, 0, -1, 0, 2 ]
+            simpleStringKmpTable = Ok <| Array.fromList [ -1, 0, -1, 0, 2 ]
           in
             kmpTable "abab"
-              |> Expect.equal simpleStringBorderTable
-      , test "More Complex String" <|
+              |> Expect.equal simpleStringKmpTable
+      , test "Lecture Example 1" <|
         \() ->
           let
-            moreComplexStringBorderTable = Ok <| Array.fromList [ -1, 0, -1, 1, -1, 0, -1, 1, -1, 0, 6 ]
+            lectureExampleOneKmpTable = Ok <| Array.fromList [ -1, 0, -1, 1, -1, 0, -1, 1, -1, 0, 6 ]
           in
             kmpTable "abacabacab"
-              |> Expect.equal moreComplexStringBorderTable
+              |> Expect.equal lectureExampleOneKmpTable
       ]
 
 badCharacterTests : Test
