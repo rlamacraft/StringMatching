@@ -6,7 +6,7 @@ $bodyFont: 'roboto slab', serif
 $stateFailed: $textColor
 $stateMatch: #388E3C
 $stateNoMatch: #D32F2F
-$transition: all .5s ease
+$transition: .5s ease
 
 html, body
   margin: 0
@@ -25,7 +25,7 @@ main
     flex-direction: column
     position: relative
     overflow: hidden
-    transition: $transition
+    transition: background-color $transition
 
     @media (min-width: $small)
       height: 100vh
@@ -63,7 +63,7 @@ main
         font-family: $bodyFont
         color: $offWhite
         padding: 2px
-        transition: $transition
+        transition: all $transition
 
         &:focus
           outline: none
